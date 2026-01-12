@@ -314,36 +314,52 @@
         }
 
         /* MOBILE OPTIMIZATIONS */
-        @media (max-width: 768px) {
+        /* MOBILE OPTIMIZATIONS (Expanded Range) */
+        @media (max-width: 1024px) {
             .top-bar {
                 flex-direction: column;
-                gap: 15px;
+                gap: 10px;
                 height: auto;
                 padding: 1rem;
             }
 
             .dashboard-grid {
                 /* Enable Snap Scrolling for App-feel */
+                display: flex;
+                /* Re-affirm flex */
+                overflow-x: auto;
                 scroll-snap-type: x mandatory;
+                /* Force Snap */
                 gap: 1rem;
+                /* Smaller gap */
                 padding: 1rem;
-                /* Adjust height to account for taller header/browser bars */
-                height: calc(100vh - 140px);
+                height: calc(100vh - 130px);
+                /* Adjust for header */
             }
 
             .project-card,
             .add-card-btn {
-                /* Fluid width for mobile (85% of screen) */
+                /* Aggressive resizing for mobile */
                 flex: 0 0 85vw !important;
                 width: 85vw !important;
+                min-width: 0 !important;
+                max-width: 85vw !important;
                 scroll-snap-align: center;
                 /* Snap to center */
+                margin-right: 0;
+                /* Clear margins */
             }
 
             /* Adjust 3D viewer height for vertical space */
             .viewer-3d-container {
-                height: 220px;
+                height: 200px;
             }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            /* Smaller Title */
         }
     </style>
 </head>
