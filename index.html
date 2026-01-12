@@ -324,42 +324,45 @@
             }
 
             .dashboard-grid {
-                /* Enable Snap Scrolling for App-feel */
+                /* SWITCH TO VERTICAL SCROLL FOR MOBILE */
                 display: flex;
-                /* Re-affirm flex */
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                /* Force Snap */
-                gap: 1rem;
-                /* Smaller gap */
+                flex-direction: column;
+                /* Stack cards vertically */
+                flex-wrap: nowrap;
+                overflow-x: hidden;
+                /* Disable horizontal scroll */
+                overflow-y: auto;
+                /* Enable vertical scroll */
+                scroll-snap-type: none;
+                /* Disable snapping to allow free scrolling */
+                gap: 2rem;
                 padding: 1rem;
-                height: calc(100vh - 130px);
-                /* Adjust for header */
+                padding-bottom: 80px;
+                /* Extra space at bottom */
+                height: calc(100vh - 140px);
+                align-items: center;
+                /* Center cards */
             }
 
             .project-card,
             .add-card-btn {
-                /* Aggressive resizing for mobile */
-                flex: 0 0 85vw !important;
-                width: 85vw !important;
-                min-width: 0 !important;
-                max-width: 85vw !important;
-                scroll-snap-align: center;
-                /* Snap to center */
+                /* Cards take full width but stack */
+                flex: 0 0 auto !important;
+                /* Let height be natural */
+                width: 95% !important;
+                max-width: 450px !important;
                 margin-right: 0;
-                /* Clear margins */
+                margin-bottom: 0;
             }
 
-            /* Adjust 3D viewer height for vertical space */
+            /* Restore 3D viewer height */
             .viewer-3d-container {
-                height: 200px;
+                height: 250px;
             }
 
             h1 {
                 font-size: 1.2rem;
             }
-
-            /* Smaller Title */
         }
     </style>
 </head>

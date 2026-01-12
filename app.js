@@ -111,7 +111,33 @@ function init() {
         }
         .log-btn:hover { background: #00f3ff44; }
 
-        #db-status { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; align-items: center; gap: 8px; font-family: 'Rajdhani'; font-weight: bold; background: rgba(0,0,0,0.8); padding: 5px 10px; border-radius: 20px; border: 1px solid #333; }
+        /* Estado por defecto (PC): Arriba Derecha */
+        #db-status { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 9999; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-family: 'Rajdhani'; 
+            font-weight: bold; 
+            background: rgba(0,0,0,0.8); 
+            padding: 5px 10px; 
+            border-radius: 20px; 
+            border: 1px solid #333; 
+        }
+
+        /* MOBILE STATUS: Abajo Derecha (estilo whatsapp/chat) para no tapar el titulo */
+        @media (max-width: 768px) {
+            #db-status {
+                top: auto;
+                bottom: 20px;
+                right: 20px;
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+        }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; transition: all 0.3s; }
         .debug-info { font-size: 0.7rem; color: #ffae00; margin-top: 5px; font-family: monospace; }
         .download-btn { background: #00f3ff; color: #000; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; margin-left: 5px; }
