@@ -19,13 +19,15 @@
         }
 
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
             gap: 2rem;
             padding: 2rem;
-            overflow-y: auto;
             height: calc(100vh - 80px);
             pointer-events: auto;
+            align-items: flex-start;
         }
 
         #bg-canvas {
@@ -43,6 +45,8 @@
         }
 
         .project-card {
+            flex: 0 0 380px;
+            width: 380px;
             background: rgba(20, 20, 30, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
@@ -96,6 +100,8 @@
         }
 
         .add-card-btn {
+            flex: 0 0 380px;
+            width: 380px;
             background: rgba(255, 255, 255, 0.02);
             border: 2px dashed rgba(255, 255, 255, 0.1);
             border-radius: 16px;
