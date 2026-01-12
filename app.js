@@ -423,14 +423,45 @@ async function handleDrop(e) { e.stopPropagation(); const tIdx = Number(this.dat
 function initSceneForCard(card, proj) {
     const el = card.querySelector('.viewer-3d-container');
     const sc = new THREE.Scene();
-    const l1 = new THREE.DirectionalLight(0xffffff, 3.5); l1.position.set(5, 10, 7); sc.add(l1);
-    const l2 = new THREE.DirectionalLight(0xaaccff, 2.0); l2.position.set(-5, 5, -5); sc.add(l2);
-    sc.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const cam = new THREE.PerspectiveCamera(35, el.clientWidth / el.clientHeight, 0.1, 100); cam.position.set(0, 2, 8); cam.lookAt(0, 0, 0);
+
+    // STUDIO LIGHTING SETUP
+    // 1. Key Light (Warm, bright, from top-left)
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+    keyLight.position.set(5, 5, 5);
+    sc.add(keyLight);
+
+    // 2. Fill Light (Cool, soft, from right)
+    const fillLight = new THREE.DirectionalLight(0xccddff, 1.2);
+    fillLight.position.set(-5, 3, 5);
+    sc.add(fillLight);
+
+    // 3. Rim Light (Bright, from behind to separate from dark background)
+    const rimLight = new THREE.DirectionalLight(0x00f3ff, 1.5); // Cyan tint for style
+    rimLight.position.set(0, 5, -5);
+    sc.add(rimLight);
+
+    // Ambient (Base fill)
+    sc.add(new THREE.AmbientLight(0x404040, 1.0));
+
+    const cam = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 100); // 45 FOV is more cinematic
+    cam.position.set(0, 1.5, 6); // Lower angle
+    cam.lookAt(0, 0, 0);
+
     let geo = sharedGeometry;
     if (proj.runtimeGeometry) geo = proj.runtimeGeometry;
     else if (geometryCache.has('cloud_' + proj.id)) geo = geometryCache.get('cloud_' + proj.id);
-    const m = new THREE.Mesh(geo, new THREE.MeshPhysicalMaterial({ color: 0xeef1f5, metalness: 0.1, roughness: 0.5 }));
+
+    // PREMIUM MATERIAL (Clay / Matte Plastic Look)
+    const material = new THREE.MeshPhysicalMaterial({
+        color: 0xe0e0e0, // Off-white
+        roughness: 0.6,   // Matte finish
+        metalness: 0.1,   // Slight reflection
+        clearcoat: 0.3,   // Subtle polish
+        clearcoatRoughness: 0.2,
+        flatShading: false // Smooth curves
+    });
+
+    const m = new THREE.Mesh(geo, material);
     normalizeScale(m); sc.add(m); scenes.push({ scene: sc, camera: cam, element: el, mesh: m, projectId: proj.id });
 }
 function normalizeScale(m) { if (m.geometry) m.geometry.computeBoundingBox(); const b = new THREE.Box3().setFromObject(m), s = new THREE.Vector3(); b.getSize(s); const max = Math.max(s.x, s.y, s.z); if (max > 0) m.scale.setScalar(4 / max); }
