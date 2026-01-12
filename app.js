@@ -243,7 +243,32 @@ function updateSceneGeometry(projectId, geometry) {
     const proj = projects.find(p => p.id === projectId);
     if (proj) proj.runtimeGeometry = geometry;
     const s = scenes.find(x => x.projectId === projectId);
-    if (s) { s.mesh.geometry = geometry; normalizeScale(s.mesh); renderer.render(s.scene, s.camera); }
+    if (s) {
+        // Wireframe Support: update both meshes in the group
+        if (s.mesh.isGroup) {
+            s.mesh.children.forEach(child => {
+                if (child.isMesh) child.geometry = geometry;
+            });
+        } else if (s.mesh.isMesh) {
+            s.mesh.geometry = geometry;
+        }
+
+        normalizeScale(s.mesh);
+    }
+}
+
+function normalizeScale(m) {
+    // 1. Reset scale to avoid compound scaling issues
+    m.scale.set(1, 1, 1);
+    m.updateMatrixWorld(true);
+
+    // 2. Compute bounds of the RAW geometry/group
+    const b = new THREE.Box3().setFromObject(m);
+    const s = new THREE.Vector3(); b.getSize(s);
+    const max = Math.max(s.x, s.y, s.z);
+
+    // 3. Apply scale to fit target size (3.5 units)
+    if (max > 0) m.scale.setScalar(3.5 / max);
 }
 
 function renderCards() {
@@ -466,14 +491,7 @@ function initSceneForCard(card, proj) {
     sc.add(group);
     scenes.push({ scene: sc, camera: cam, element: el, mesh: group, projectId: proj.id });
 }
-function normalizeScale(m) {
-    // Safe check if m has geometry, otherwise it might be a Group (though we call it on Mesh above)
-    if (m.geometry) m.geometry.computeBoundingBox();
-    const b = new THREE.Box3().setFromObject(m);
-    const s = new THREE.Vector3(); b.getSize(s);
-    const max = Math.max(s.x, s.y, s.z);
-    if (max > 0) m.scale.setScalar(3.5 / max); // Slightly smaller to fit UI nicely
-}
+
 function loadDefaultObj() { loader.load('./Reinbo.obj', (o) => { let m = 0, b = null; o.traverse(c => { if (c.isMesh && c.geometry.attributes.position.count > m) { m = c.geometry.attributes.position.count; b = c.geometry; } }); if (b) { processGeometry(b); sharedGeometry = b; } else sharedGeometry = new THREE.BoxGeometry(1, 1, 1); }); } // Box Fallback
 function processGeometry(g) { g.computeBoundingBox(); g.center(); g.computeVertexNormals(); }
 function animate() { requestAnimationFrame(animate); renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true); scenes.forEach(s => { const r = s.element.getBoundingClientRect(); if (r.bottom < 0 || r.top > canvas.clientHeight) return; const y = canvas.clientHeight - r.bottom; renderer.setScissor(r.left, y, r.width, r.height); renderer.setViewport(r.left, y, r.width, r.height); s.mesh.rotation.y += 0.005; renderer.render(s.scene, s.camera); }); }
