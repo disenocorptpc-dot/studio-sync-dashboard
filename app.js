@@ -424,47 +424,56 @@ function initSceneForCard(card, proj) {
     const el = card.querySelector('.viewer-3d-container');
     const sc = new THREE.Scene();
 
-    // STUDIO LIGHTING SETUP
-    // 1. Key Light (Warm, bright, from top-left)
-    const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
-    keyLight.position.set(5, 5, 5);
-    sc.add(keyLight);
+    // Tech Light Setup
+    const l1 = new THREE.DirectionalLight(0xffffff, 2); l1.position.set(5, 10, 7); sc.add(l1);
+    sc.add(new THREE.AmbientLight(0x555555));
 
-    // 2. Fill Light (Cool, soft, from right)
-    const fillLight = new THREE.DirectionalLight(0xccddff, 1.2);
-    fillLight.position.set(-5, 3, 5);
-    sc.add(fillLight);
-
-    // 3. Rim Light (Bright, from behind to separate from dark background)
-    const rimLight = new THREE.DirectionalLight(0x00f3ff, 1.5); // Cyan tint for style
-    rimLight.position.set(0, 5, -5);
-    sc.add(rimLight);
-
-    // Ambient (Base fill)
-    sc.add(new THREE.AmbientLight(0x404040, 1.0));
-
-    const cam = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 100); // 45 FOV is more cinematic
-    cam.position.set(0, 1.5, 6); // Lower angle
+    const cam = new THREE.PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 100);
+    cam.position.set(0, 1.5, 6);
     cam.lookAt(0, 0, 0);
 
     let geo = sharedGeometry;
     if (proj.runtimeGeometry) geo = proj.runtimeGeometry;
     else if (geometryCache.has('cloud_' + proj.id)) geo = geometryCache.get('cloud_' + proj.id);
 
-    // PREMIUM MATERIAL (Clay / Matte Plastic Look)
-    const material = new THREE.MeshPhysicalMaterial({
-        color: 0xe0e0e0, // Off-white
-        roughness: 0.6,   // Matte finish
-        metalness: 0.1,   // Slight reflection
-        clearcoat: 0.3,   // Subtle polish
-        clearcoatRoughness: 0.2,
-        flatShading: false // Smooth curves
+    // TECH STYLE: Hidden Line Wireframe
+    // 1. The Mask (Solid Black Mesh to hide back lines)
+    const matSolid = new THREE.MeshBasicMaterial({
+        color: 0x050505, // Almost black
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
     });
 
-    const m = new THREE.Mesh(geo, material);
-    normalizeScale(m); sc.add(m); scenes.push({ scene: sc, camera: cam, element: el, mesh: m, projectId: proj.id });
+    // 2. The Grid (Cyan Wireframe)
+    const matWire = new THREE.MeshBasicMaterial({
+        color: 0x00f3ff, // Cyber Cyan
+        wireframe: true,
+        transparent: true,
+        opacity: 0.4
+    });
+
+    const meshSolid = new THREE.Mesh(geo, matSolid);
+    normalizeScale(meshSolid); // Scale the solid one first
+
+    const meshWire = new THREE.Mesh(geo, matWire);
+    meshWire.scale.copy(meshSolid.scale); // Copy scale to wireframe
+
+    const group = new THREE.Group();
+    group.add(meshSolid);
+    group.add(meshWire);
+
+    sc.add(group);
+    scenes.push({ scene: sc, camera: cam, element: el, mesh: group, projectId: proj.id });
 }
-function normalizeScale(m) { if (m.geometry) m.geometry.computeBoundingBox(); const b = new THREE.Box3().setFromObject(m), s = new THREE.Vector3(); b.getSize(s); const max = Math.max(s.x, s.y, s.z); if (max > 0) m.scale.setScalar(4 / max); }
+function normalizeScale(m) {
+    // Safe check if m has geometry, otherwise it might be a Group (though we call it on Mesh above)
+    if (m.geometry) m.geometry.computeBoundingBox();
+    const b = new THREE.Box3().setFromObject(m);
+    const s = new THREE.Vector3(); b.getSize(s);
+    const max = Math.max(s.x, s.y, s.z);
+    if (max > 0) m.scale.setScalar(3.5 / max); // Slightly smaller to fit UI nicely
+}
 function loadDefaultObj() { loader.load('./Reinbo.obj', (o) => { let m = 0, b = null; o.traverse(c => { if (c.isMesh && c.geometry.attributes.position.count > m) { m = c.geometry.attributes.position.count; b = c.geometry; } }); if (b) { processGeometry(b); sharedGeometry = b; } else sharedGeometry = new THREE.BoxGeometry(1, 1, 1); }); } // Box Fallback
 function processGeometry(g) { g.computeBoundingBox(); g.center(); g.computeVertexNormals(); }
 function animate() { requestAnimationFrame(animate); renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true); scenes.forEach(s => { const r = s.element.getBoundingClientRect(); if (r.bottom < 0 || r.top > canvas.clientHeight) return; const y = canvas.clientHeight - r.bottom; renderer.setScissor(r.left, y, r.width, r.height); renderer.setViewport(r.left, y, r.width, r.height); s.mesh.rotation.y += 0.005; renderer.render(s.scene, s.camera); }); }
