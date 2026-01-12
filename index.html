@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Sync | Production Deck</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Rajdhani:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Inline styles -->
+    <style>
+        #app-container {
+            pointer-events: none;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+            overflow-y: auto;
+            height: calc(100vh - 80px);
+            pointer-events: auto;
+        }
+
+        #bg-canvas {
+            display: none;
+        }
+
+        #multiview-canvas {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .project-card {
+            background: rgba(20, 20, 30, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+            min-height: 500px;
+            pointer-events: auto !important;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* NEW: Delete Button INSIDE 3D View */
+        .delete-btn-3d {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            /* LEFT side to avoid conflict with Upload icon */
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 0, 85, 0.2);
+            border: 1px solid rgba(255, 0, 85, 0.5);
+            color: #ff0055;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 20;
+            /* Same as Upload Button */
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+
+        .delete-btn-3d:hover {
+            background: #ff0055;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+        }
+
+        .add-card-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            cursor: pointer;
+            transition: all 0.2s;
+            pointer-events: auto !important;
+        }
+
+        .add-card-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-primary);
+            transform: translateY(-5px);
+        }
+
+        .add-icon {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .add-text {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .add-card-btn:hover .add-icon,
+        .add-card-btn:hover .add-text {
+            color: var(--accent-primary);
+        }
+
+        .card-header,
+        .controls-section {
+            position: relative;
+            z-index: 15;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .state-printing {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+            background: rgba(20, 25, 40, 0.8);
+        }
+
+        .state-structure {
+            border-color: #ffb800;
+            background: linear-gradient(180deg, rgba(200, 150, 50, 0.05) 0%, rgba(20, 20, 30, 0.8) 100%);
+            box-shadow: 0 0 15px rgba(255, 184, 0, 0.1);
+        }
+
+        .state-finished {
+            border-color: #00ff9d;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.15);
+            background: linear-gradient(180deg, rgba(0, 255, 157, 0.05) 0%, rgba(20, 20, 30, 0.8) 100%);
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-title h3 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.2rem;
+            outline: none;
+            cursor: text;
+            pointer-events: auto;
+        }
+
+        .card-title p {
+            font-size: 0.8rem;
+            color: #8892b0;
+            outline: none;
+            cursor: text;
+            pointer-events: auto;
+        }
+
+        .deadline-badge {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        .deadline-badge.urgent {
+            border-color: #ff0055;
+            color: #ff0055;
+            background: rgba(255, 0, 85, 0.1);
+        }
+
+        .viewer-3d-container {
+            width: 100%;
+            height: 250px;
+            background: radial-gradient(circle at center, #2a2a35 0%, #15151a 100%);
+            position: relative;
+        }
+
+        .obj-upload-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .obj-upload-btn:hover {
+            background: var(--accent-primary);
+            color: #000;
+        }
+
+        .obj-upload-btn input {
+            display: none;
+        }
+
+        [contenteditable="true"]:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        [contenteditable="true"]:focus {
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+        }
+
+        .controls-section {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .process-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #555e75;
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .custom-checkbox input:checked~.label-text {
+            color: #fff;
+        }
+
+        .date-input-group {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 1rem;
+        }
+
+        .date-input-group label {
+            display: block;
+            font-size: 0.7rem;
+            color: #8892b0;
+            margin-bottom: 0.4rem;
+        }
+
+        input[type="date"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 6px;
+            width: 100%;
+            font-family: 'Outfit', sans-serif;
+            color-scheme: dark;
+        }
+
+        .status-bar {
+            height: 4px;
+            width: 100%;
+            background: #222;
+            margin-top: 0;
+        }
+
+        .status-fill {
+            height: 100%;
+            width: 30%;
+            background: var(--accent-primary);
+            transition: width 0.5s, background-color 0.5s;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="multiview-canvas"></canvas>
+    <div id="app-container" style="padding: 0; width: 100%;">
+        <header class="glass-panel top-bar"
+            style="margin: 0; border-radius: 0; border-left: none; border-right: none; border-top: none; pointer-events: auto;">
+            <div class="logo-section">
+                <div class="status-indicator webgl-active"></div>
+                <h1>Diseño Industrial y 3D <span class="accent-text">| Cola de producción</span></h1>
+            </div>
+            <div class="meta-info">
+                <button class="btn btn-secondary" onclick="addProject()">+ AÑADIR</button>
+            </div>
+        </header>
+        <main class="dashboard-grid" id="card-grid">
+            <!-- JS Injected -->
+        </main>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+                "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+                "firebase/storage": "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"
+            }
+        }
+    </script>
+    <script type="module" src="app.js?v=cachebust"></script>
+</body>
+
+</html>
