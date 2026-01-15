@@ -59,12 +59,12 @@ function init() {
             overflow: hidden;
         }
         .log-scroll-area {
-            height: 120px;
+            height: 150px; /* More height for logs */
             overflow-y: auto;
             padding: 8px;
             display: flex;
-            flex-direction: column-reverse; /* Newest at bottom visually, or top? Let's stick to standard chat: newest at bottom, but for logs usually newest top. Let's do Standard list: top is old, bottom is new, scroll to bottom. */
-            scroll-behavior: smooth;
+            flex-direction: column-reverse; /* Newest at bottom visually */
+            gap: 8px; /* Spacing between logs */
         }
         /* Custom Scrollbar for Log */
         .log-scroll-area::-webkit-scrollbar { width: 4px; }
